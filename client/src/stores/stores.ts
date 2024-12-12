@@ -41,8 +41,8 @@ type GameStore = {
     updateBoard: (
         newBoard: ((currentBoard: Tile[]) => Tile[]) | Tile[]
     ) => void; // Function to update the board, accepts a new array or a function
-    toggleTurn: (
-        nextTurn: ((isXNext: boolean) => boolean) | boolean
+    setTurn: (
+        nextTurn: boolean
     ) => void; // Function to toggle the turn, accepts a boolean or a function
     setPlayerRole: (role: Role) => void;
 };
@@ -63,13 +63,8 @@ export const useGameStore = create<GameStore>(
                                 : newBoard, // Direct update
                     }));
                 },
-                toggleTurn: (nextTurn) => {
-                    set((state) => ({
-                        isXNext:
-                            typeof nextTurn === 'function'
-                                ? nextTurn(state.isXNext) // Functional update
-                                : nextTurn, // Direct update
-                    }));
+                setTurn: (nextTurn) => {
+                    set({isXNext: nextTurn})
                 },
                 setPlayerRole: (role) => {
                     set({playerRole: role});

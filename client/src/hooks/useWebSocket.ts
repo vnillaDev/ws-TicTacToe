@@ -1,16 +1,17 @@
-import {useGameStore, useSocketStore, useUserListStore} from "../stores/stores.ts";
-import {useState} from "react";
-import {ConnectMsg, ServerResponse, Tile} from "../common/client-models.ts";
+import { useGameStore, useSocketStore, useUserListStore } from "../stores/stores";
+import { useState } from "react";
+import { ConnectMsg, MoveMessage, ServerResponse, Tile } from "../common/client-models";
 
 export const useWebSocket = () => {
     const ws = useSocketStore(state => state.ws);
     const setWs = useSocketStore(state => state.setWs);
-    const setPlayerRole = useGameStore(state => state.setPlayerRole);
     const [, setIsConnected] = useState(false);
 
-    const send = (message: string) => {
-        console.log(`Sending message to socket: ${message}`)
+    const setPlayerRole = useGameStore(state => state.setPlayerRole);
+    const updateBoard = useGameStore(state => state.updateBoard);
+    const setTurn = useGameStore(state => state.setTurn);
 
+    const send = (message: object) => {
         if (ws?.readyState !== WebSocket.OPEN) {
             console.error("WebSocket is not connected...");
             return;
@@ -20,18 +21,16 @@ export const useWebSocket = () => {
     };
 
     const connect = (username: string, url: string) => {
-        console.log(`Connecting to URL: '${url}'`);
-
         if (ws) {
             console.warn('WebSocket already initialized...');
             return;
         }
 
-        const webSocket: WebSocket = new WebSocket(url);
+        const webSocket = new WebSocket(url);
         setWs(webSocket);
 
         webSocket.onopen = () => {
-            console.log("Opened connection to WebSocket...")
+            console.log("Opened connection to WebSocket...");
             setIsConnected(true);
 
             const connectMessage: ConnectMsg = {
@@ -39,8 +38,7 @@ export const useWebSocket = () => {
                 username: username,
             };
 
-            // sending 'connectMessage' to server
-            webSocket.send(JSON.stringify(connectMessage))
+            webSocket.send(JSON.stringify(connectMessage));
         };
 
         webSocket.onmessage = (evt) => {
@@ -48,41 +46,46 @@ export const useWebSocket = () => {
 
             switch (serverMsg.type) {
                 case "ASSIGN_ROLE":
-                    setPlayerRole(serverMsg.role)
+                    setPlayerRole(serverMsg.role);
                     break;
                 case "USER_LIST":
                     useUserListStore.getState().setUsernames(serverMsg.usernames);
                     break;
                 case "MAKE_MOVE":
-                    useGameStore.getState().updateBoard((currentBoard) => {
-                        const newBoard = currentBoard.slice();
-                        newBoard[serverMsg.index] = serverMsg.player as Tile;
-                        return newBoard
-                    })
+                    if (Array.isArray(serverMsg.board)) {
+                        updateBoard(serverMsg.board as Tile[]);
+                    }
+                    setTurn(serverMsg.isXNext);
                     break;
                 default:
-                    console.log(`Unknown message: ${serverMsg}`);
+                    console.log("Unknown message:", serverMsg);
             }
         };
 
         webSocket.onclose = () => {
-            console.log("WebSocket disconnected");
-            setIsConnected(false);
+            console.log("WebSocket connection closed.");
         };
 
         webSocket.onerror = (error) => {
-            console.error(`An error has occurred: ${error}`);
-            setIsConnected(false);
+            console.error("WebSocket error:", error);
         };
     };
 
+    const makeMove = (index: number, player: 'X' | 'O') => {
+        // Send MOVE request to server
+        const moveMessage: MoveMessage = {
+            type: "MAKE_MOVE",
+            index,
+            player
+        };
+        send(moveMessage);
+    };
+
     const disconnect = () => {
-        console.log("WebSocket disconnected.");
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.close();
-            setWs(null);
         }
-    }
+    };
 
-    return {send, connect, disconnect}
-}
+    return { send, connect, makeMove, disconnect };
+};

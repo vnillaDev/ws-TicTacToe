@@ -1,10 +1,10 @@
-import {WebSocketServer, WebSocket} from "ws";
+import {WebSocket, WebSocketServer} from "ws";
 import {Client, ClientMessage} from "./common/server-models";
 import {handleClientRequest, handleDisconnect} from "./handler";
 
 const PORT: number = 9999;
 
-const wss = new WebSocketServer({ port: PORT })
+const wss = new WebSocketServer({port: PORT})
 let clientCount: number = 0;
 
 wss.on('connection', (socket: WebSocket) => {
@@ -34,3 +34,5 @@ wss.on('connection', (socket: WebSocket) => {
         return;
     });
 });
+
+console.log(`WebSocket is running port: '${PORT}'`)

@@ -1,81 +1,65 @@
-import Tile from "./Tile.tsx";
+import Tile from "./Tile";
 import {Box, Typography} from "@mui/material";
-import {useGameStore} from "../stores/stores.ts";
+import {useGameStore} from "../stores/stores";
 import {useEffect} from "react";
-import {calculateStatus, calculateTurns, calculateWinner} from "../common/helper.ts";
-import {Player} from "../common/client-models.ts";
-import {useWebSocket} from "../hooks/useWebSocket.ts";
+import {calculateStatus, calculateTurns, calculateWinner} from "../common/helper";
+import {useWebSocket} from "../hooks/useWebSocket";
 
 export default function Board() {
-    const tiles = useGameStore(state => state.board);
-    const setTiles = useGameStore(state => state.updateBoard);
-    const isXNext = useGameStore(state => state.isXNext);
-    const setXIsNext = useGameStore(state => state.toggleTurn);
-    const {send} = useWebSocket()
+    const board = useGameStore((state) => state.board);
+    const isXNext = useGameStore((state) => state.isXNext);
+    const playerRole = useGameStore((state) => state.playerRole);
 
-    const player: Player = isXNext ? 'X' : 'O';
+    const {makeMove} = useWebSocket();
 
-    const winner = calculateWinner(tiles)
-    const turns = calculateTurns(tiles)
-    const status = calculateStatus(winner, turns, player)
-
+    const winner = calculateWinner(board);
+    const turns = calculateTurns(board);
+    const status = calculateStatus(winner, turns, isXNext ? 'X' : 'O');
 
     const handleClick = (index: number) => {
-        if (tiles[index] || winner) return
-        const nextTiles = tiles.slice()
-        nextTiles[index] = player;
+        if (!playerRole) return;
+        if (board[index] || winner) return;
 
-        setTiles(nextTiles);
-        setXIsNext(!isXNext);
+        const currentPlayer = isXNext ? 'X' : 'O';
 
-        sendToServer(index, player);
-    }
+        // Only allow the player whose turn it is to make a move
+        if (playerRole !== currentPlayer) return;
 
-    const sendToServer = (index: number, player: string) => {
-        const moveMessage = {
-            type: "MAKE_MOVE",
-            index: index,
-            player: player
-        }
-
-        send(JSON.stringify(moveMessage))
+        // Send move to the server
+        makeMove(index, playerRole);
     };
 
     useEffect(() => {
-        console.log(tiles)
-    }, [tiles])
+        console.log("Current Board State:", board);
+    }, [board]);
 
     return (
-        <>
+        <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            // border="8px solid red"
+            width={"fit-content"}
+        >
+            <Typography variant="h1">Tic Tac Toe</Typography>
+            <Typography variant="h2">{status}</Typography>
             <Box
-                display="flex"
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                // border="8px solid red"
-                width={"fit-content"}
+                display='grid'
+                gridTemplateColumns='repeat(3, 1fr)'
+                gridTemplateRows='repeat(3, 1fr)'
+                width='calc(3 * 6rem)'
+                height='calc(3 * 6rem)'
+                border='1px solid #999'
             >
-                <Typography variant="h1">Tic Tac Toe</Typography>
-                <Typography variant="h2">{status}</Typography>
-                <Box
-                    display='grid'
-                    gridTemplateColumns='repeat(3, 1fr)'
-                    gridTemplateRows='repeat(3, 1fr)'
-                    width='calc(3 * 6rem)'
-                    height='calc(3 * 6rem)'
-                    border='1px solid #999'
-                >
-                    {
-                        tiles.map((tile, tileIndex) => (
-                            <Tile
-                                key={`square-${tileIndex}`}
-                                value={tile}
-                                onTileClick={() => handleClick(tileIndex)}
-                            />
-                        ))
-                    }
-                </Box>
+                {board.map((tile, tileIndex) => (
+                    <Tile
+                        key={`square-${tileIndex}`}
+                        value={tile}
+                        onTileClick={() => handleClick(tileIndex)}
+                    />
+                ))}
             </Box>
-        </>
-    )
+        </Box>
+    );
 }
