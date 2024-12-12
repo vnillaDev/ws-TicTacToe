@@ -1,4 +1,4 @@
-import { Client, ClientMessage, ConnectMsg, MoveMessage, UserMsg } from "./common/server-models";
+import {Client, ClientMessage, ConnectMsg, MoveMessage, UserMsg} from "./common/server-models";
 
 const clientList: Client[] = [];
 
@@ -6,9 +6,6 @@ const clientList: Client[] = [];
 let board = Array(9).fill(null);
 let isXNext = true;
 
-/**
- * Helper function to broadcast a message to all connected clients.
- */
 function broadcast(message: object) {
     const data = JSON.stringify(message);
     clientList.forEach(c => c.socket.send(data));
@@ -20,10 +17,12 @@ export function handleClientRequest(client: Client, clientMsg: ClientMessage) {
             handleConnect(client, clientMsg as ConnectMsg);
             break;
         case "USER_LIST":
-            // Currently not handled. Consider implementing if needed.
             break;
         case "MAKE_MOVE":
             handleMakeMove(client, clientMsg as MoveMessage);
+            break;
+        case "RESET_GAME":
+            handleResetGame();
             break;
         default:
             break;
@@ -37,6 +36,13 @@ export function handleDisconnect(client: Client) {
     }
 
     console.log(`${client.username} has disconnected!`);
+
+    // Broadcast updated user list
+    const usernames = clientList.map(c => c.username);
+    broadcast({
+        type: 'USER_LIST',
+        usernames
+    } as UserMsg);
 }
 
 function handleConnect(client: Client, message: ConnectMsg) {
@@ -61,9 +67,9 @@ function handleConnect(client: Client, message: ConnectMsg) {
     clientList.push(client);
 
     if (assignedRole) {
-        client.socket.send(JSON.stringify({ type: 'ASSIGN_ROLE', role: assignedRole }));
+        client.socket.send(JSON.stringify({type: 'ASSIGN_ROLE', role: assignedRole}));
     } else {
-        client.socket.send(JSON.stringify({ type: 'GAME_FULL' }));
+        client.socket.send(JSON.stringify({type: 'GAME_FULL'}));
     }
 
     // Broadcast all usernames to clients
@@ -82,7 +88,7 @@ function handleConnect(client: Client, message: ConnectMsg) {
 }
 
 function handleMakeMove(client: Client, message: MoveMessage) {
-    const { index, player } = message;
+    const {index, player} = message;
 
     // Check if player matches the current turn
     const currentPlayer = isXNext ? 'X' : 'O';
@@ -106,6 +112,18 @@ function handleMakeMove(client: Client, message: MoveMessage) {
     // Broadcast the updated board state to all clients
     broadcast({
         type: 'MAKE_MOVE',
+        board: board,
+        isXNext: isXNext
+    });
+}
+
+function handleResetGame() {
+    board = Array(9).fill(null);
+    isXNext = true;
+
+    // Broadcast updated state
+    broadcast({
+        type: "RESET_GAME",
         board: board,
         isXNext: isXNext
     });

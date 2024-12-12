@@ -1,4 +1,4 @@
-import type { WebSocket } from "ws";
+import type {WebSocket} from "ws";
 
 export type Client = {
     id: number;
@@ -25,5 +25,8 @@ export type UserMsg = {
     usernames: string[]
 }
 
-export type ClientMessage = ConnectMsg | UserMsg | MoveMessage ;
-// export type ServerResponse = ChatMessage;
+export type ResetGameMsg = {
+    type: "RESET_GAME"
+}
+
+export type ClientMessage = ConnectMsg | UserMsg | MoveMessage | ResetGameMsg;

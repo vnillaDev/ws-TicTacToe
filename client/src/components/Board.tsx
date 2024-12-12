@@ -17,15 +17,17 @@ export default function Board() {
     const status = calculateStatus(winner, turns, isXNext ? 'X' : 'O');
 
     const handleClick = (index: number) => {
-        if (!playerRole) return;
+        // If the player does not have a valid role ('X' or 'O'), do nothing.
+        if (playerRole !== 'X' && playerRole !== 'O') return;
+
+        // If the tile is occupied or we have a winner, ignore the click.
         if (board[index] || winner) return;
 
+        // Check if it's the player's turn
         const currentPlayer = isXNext ? 'X' : 'O';
-
-        // Only allow the player whose turn it is to make a move
         if (playerRole !== currentPlayer) return;
 
-        // Send move to the server
+        // Request a move from the server
         makeMove(index, playerRole);
     };
 

@@ -1,4 +1,4 @@
-export type Player = 'X' | 'O';
+export type Player = 'X' | 'O' | null;
 
 export type Role = Player;
 
@@ -31,5 +31,12 @@ export type AssignRoleMessage = {
     role: Role
 }
 
-export type ClientMessage = ConnectMsg | UserMsg | MoveMessage ;
-export type ServerResponse = ConnectMsg | UserMsg | ServerMoveBroadcast | AssignRoleMessage;
+export type GameFullMsg = {
+    type: "GAME_FULL"
+}
+
+export type ResetGameMsg = {
+    type: "RESET_GAME"
+}
+
+export type ServerResponse = ConnectMsg | UserMsg | ServerMoveBroadcast | AssignRoleMessage | ResetGameMsg | GameFullMsg;

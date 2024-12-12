@@ -1,6 +1,6 @@
-import { useGameStore, useSocketStore, useUserListStore } from "../stores/stores";
-import { useState } from "react";
-import { ConnectMsg, MoveMessage, ServerResponse, Tile } from "../common/client-models";
+import {useGameStore, useSocketStore, useUserListStore} from "../stores/stores";
+import {useState} from "react";
+import {ConnectMsg, MoveMessage, ServerResponse, Tile} from "../common/client-models";
 
 export const useWebSocket = () => {
     const ws = useSocketStore(state => state.ws);
@@ -57,6 +57,12 @@ export const useWebSocket = () => {
                     }
                     setTurn(serverMsg.isXNext);
                     break;
+                case "RESET_GAME":
+                    useGameStore.getState().resetGame()
+                    break;
+                case "GAME_FULL":
+                    useGameStore.getState().setPlayerRole(null);
+                    break;
                 default:
                     console.log("Unknown message:", serverMsg);
             }
@@ -81,11 +87,15 @@ export const useWebSocket = () => {
         send(moveMessage);
     };
 
+    const resetGame = () => {
+        send({type: "RESET_GAME"});
+    }
+
     const disconnect = () => {
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.close();
         }
     };
 
-    return { send, connect, makeMove, disconnect };
+    return {send, connect, makeMove, disconnect, resetGame};
 };

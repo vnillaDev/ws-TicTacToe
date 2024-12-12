@@ -1,4 +1,4 @@
-import {Box, Button, TextField} from "@mui/material";
+import {Box, Button, TextField, Typography} from "@mui/material";
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {useWebSocket} from "../hooks/useWebSocket.ts";
@@ -20,7 +20,7 @@ export default function Login() {
 
     return (
         <>
-            <h1>Login</h1>
+            <Typography variant="h2">Login</Typography>
             <Box
                 display="flex"
                 flexDirection="column"
@@ -28,7 +28,7 @@ export default function Login() {
                 justifyContent="center"
                 bgcolor="#fff"
                 padding="35px"
-                borderRadius="15px"
+                borderRadius="5px"
             >
                 <TextField
                     label="username"
